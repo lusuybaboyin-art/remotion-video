@@ -1,0 +1,26 @@
+{
+  "name": "remotion-edit",
+  "version": "1.0.0",
+  "description": "Trendy video editing style with word-level subtitles, SFX, and stock footage",
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion bundle",
+    "render": "remotion render",
+    "dev": "remotion studio"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "remotion": "^4.0.275",
+    "remotion-compress-video": "^4.0.275"
+  },
+  "devDependencies": {
+    "@remotion/cli": "^4.0.275",
+    "@remotion/eslint-config": "^4.0.275",
+    "@remotion/renderer": "^4.0.275",
+    "@remotion/studio": "^4.0.275",
+    "@remotion/player": "^4.0.275",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5"
+  }
+}

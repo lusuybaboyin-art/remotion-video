@@ -1,0 +1,102 @@
+name: Render Remotion Video
+
+on:
+  workflow_dispatch:  # ручной запуск из вкладки Actions
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'package.json'
+      - 'tsconfig.json'
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  render:
+    name: Render Video (1080x1920, 30fps)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # 1. Чеккаут кода
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Настройка Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3. Установка зависимостей
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./remotion-edit
+
+      # 4. Проверка аудиофайла
+      - name: Check audio file
+        run: |
+          if [ ! -f ./remotion-edit/public/audio/voice.mp3 ]; then
+            echo "⚠️ Аудиофайл не найден! Создаю тишину как заглушку..."
+            mkdir -p ./remotion-edit/public/audio
+            # Генерируем 30 секунд тишины через ffmpeg
+            ffmpeg -f lavfi -i anullsrc=r=44100:cl=stereo -t 30 -q:a 9 ./remotion-edit/public/audio/voice.mp3 -y
+          else
+            echo "✅ Аудиофайл найден: $(ls -lh ./remotion-edit/public/audio/voice.mp3)"
+          fi
+
+      # 5. Рендеринг видео (полное качество)
+      - name: Render video (H.264, high quality)
+        run: |
+          npx remotion render \
+            --codec=h264 \
+            --crf=18 \
+            --concurrency=4 \
+            MainVideo \
+            out/final.mp4
+        working-directory: ./remotion-edit
+        env:
+          # Увеличиваем память для Node.js
+          NODE_OPTIONS: "--max-old-space-size=4096"
+
+      # 6. Также рендерим превью (половина размера, быстро)
+      - name: Render preview (half scale)
+        run: |
+          npx remotion render \
+            --scale=0.5 \
+            --codec=h264 \
+            --crf=23 \
+            MainVideo \
+            out/preview.mp4
+        working-directory: ./remotion-edit
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+
+      # 7. Загрузка артефактов (скачиваешь из Actions → Artifacts)
+      - name: Upload final video
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-video-1080x1920
+          path: remotion-edit/out/final.mp4
+          retention-days: 7
+          compression-level: 0
+
+      - name: Upload preview video
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-video-540x960
+          path: remotion-edit/out/preview.mp4
+          retention-days: 7
+          compression-level: 0
+
+      # 8. Информация о результате
+      - name: Show file sizes
+        run: |
+          echo "=== Финальное видео ==="
+          ls -lh ./remotion-edit/out/final.mp4
+          echo "=== Превью ==="
+          ls -lh ./remotion-edit/out/preview.mp4
