@@ -34,7 +34,7 @@ jobs:
 
       # 3. Установка зависимостей
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         working-directory: ./remotion-edit
 
       # 4. Проверка аудиофайла
